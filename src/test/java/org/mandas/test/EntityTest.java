@@ -8,6 +8,7 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceProviderResolver;
@@ -22,8 +23,13 @@ import org.hibernate.service.ServiceRegistry;
 import org.jglue.cdiunit.ActivatedAlternatives;
 import org.jglue.cdiunit.CdiRunner;
 import org.jglue.cdiunit.ProducesAlternative;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mandas.test.TestEntity;
+import org.mandas.test.TestEntityDao;
+import org.mandas.test.TestEntityManagerProducer;
 
 import com.google.common.collect.Lists;
 
@@ -34,6 +40,8 @@ public class EntityTest {
 	@Inject
 	protected EntityManager em;
 
+	protected EntityTransaction tx;
+	
 	protected Configuration fillConfiguration(Configuration cfg) {
 		return cfg.addAnnotatedClass(TestEntity.class);
 	}
@@ -92,13 +100,26 @@ public class EntityTest {
 	}
 
 	@Test
-	public void setup() {
+	public void testEntity() {
 		TestEntity test = new TestEntity();
 		test.setId(1L);
 
 		TestEntityDao dao = new TestEntityDao();
 		dao.setEntityManager(em);
 		dao.getEntityManager().persist(test);
+	}
+	
+	@Before
+	public void setup() throws Exception {
+		tx = em.getTransaction();
+		tx.begin();
+	}
+	
+	@After
+	public void teardown() {
+		tx.rollback();
+		
+		em.getEntityManagerFactory().close();
 	}
 
 }
